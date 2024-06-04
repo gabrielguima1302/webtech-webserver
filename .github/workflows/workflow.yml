@@ -1,48 +1,48 @@
 name: Deploy automático para o servidor
 
 env:
-    hostname: 172.190.37.53
-    username: azureuser
-    destination: /var/www/html
-    excluded_items_command: "--exclude .git --exclude .github --exclude .vscode"
+ hostname: 172.190.37.53
+ username: azureuser
+ destination: /var/www/html
+ excluded_items_command: "--exclude .git --exclude .github --exclude .vscode"
 
 on:
-    push:
-        branches:
-            - main
-    pull_request:
-        branches:
-            - main
-        types:
-            - closed
+ push:
+  branches:
+   - main
+  pull_request:
+   branches:
+    - main
+   types:
+    - closed
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
+ deploy:
+ runs-on: ubuntu-latest
+ steps:
+  - uses: actions/checkout@v4
 
             # Baixar pacotes necessarios
-            - run: sudo apt update
-            - run: sudo apt install -y rsync
-            - run: sudo apt install -y openssh-client
-            - run: sudo apt install -y secure-delete
-            - run: sudo apt install -y sshpass
+  - run: sudo apt update
+  - run: sudo apt install -y rsync
+  - run: sudo apt install -y openssh-client
+  - run: sudo apt install -y secure-delete
+  - run: sudo apt install -y sshpass
 
             # Criar pasta .ssh para armazenar as chaves 
-            - run: mkdir -p ~/.ssh
+  - run: mkdir -p ~/.ssh
 
             # Gravar a chave privada no arquivo id_rsa
-            - run: echo "${{secrets.SSH_PRIVATE_KEY}}" > ~/.ssh/id_rsa
+  - run: echo "${{secrets.SSH_PRIVATE_KEY}}" > ~/.ssh/id_rsa
 
             # Define as permissoes de leitura e gravação somente para o usuario admin
-            - run: chmod 600 ~/.ssh/id_rsa
+  - run: chmod 600 ~/.ssh/id_rsa
 
-            - run: sshpass -p "${{secrets.SERVER_PASSWORD}}" ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{env.username}}@${{env.hostname}} "echo \"${{secrets.SERVER_PASSWORD}}\" | sudo -S chown --recursive ${{env.username}} ${{env.destination}}"
+  - run: sshpass -p "${{secrets.SERVER_PASSWORD}}" ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{env.username}}@${{env.hostname}} "echo \"${{secrets.SERVER_PASSWORD}}\" | sudo -S chown --recursive ${{env.username}} ${{env.destination}}"
 
             #
-            - run: rsync -p ${{secrets.SERVER_PASSWORD}} --archive --verbose --compress --delete -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" ./ ${{env.username}}@${{env.hostname}}:${{env.destination}} 
-              continue-on-error: true
+  - run: rsync -p ${{secrets.SERVER_PASSWORD}} --archive --verbose --compress --delete -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" ./ ${{env.username}}@${{env.hostname}}:${{env.destination}} 
+    continue-on-error: true
             
-            # Apagar fisicamente o arquivo contendo a chave privada
-            - run: srm ~/.ssh/id_rsa
+# Apagar fisicamente o arquivo contendo a chave privada
+  - run: srm ~/.ssh/id_rsa
